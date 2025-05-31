@@ -1,193 +1,262 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>المتجر الإلكتروني</title>
+  <title>متجر إلكتروني احترافي</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      font-family: 'Cairo', sans-serif;
-      direction: rtl;
-      background-color: #f2f2f2;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #fff;
-      padding: 15px;
-      text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    h1 {
-      margin: 0;
-      color: #333;
-    }
-    .popup, .products, .checkout {
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .product-card {
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 20px;
-      background: #fafafa;
-    }
-    .product-card img {
-      max-width: 100%;
-      border-radius: 8px;
-    }
-    .product-card h3 {
-      margin: 10px 0 5px;
-    }
-    .product-card p {
-      margin: 5px 0;
-    }
-    .product-card button {
-      padding: 10px;
-      background: orange;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .product-card button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    .unavailable {
-      border: 2px solid red !important;
-    }
-    .checkout p {
-      margin: 10px 0;
-    }
-    .checkout .unavailable {
-      color: red;
-    }
+    body { font-family: 'Cairo', sans-serif; background: #fafbfc; margin: 0; }
+    .popup-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;}
+    .popup { background: #fff; border-radius: 16px; box-shadow: 0 8px 40px #0001; padding: 32px 24px; max-width: 300px; text-align: center;}
+    .popup select, .popup button { width: 100%; margin: 8px 0; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+    .header { background: #fff; padding: 20px 0 10px; box-shadow: 0 2px 12px #0002; text-align: center; font-size: 1.8rem; font-weight: bold;}
+    .products { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 24px; padding: 32px;}
+    .product { background: #fff; border-radius: 16px; box-shadow: 0 2px 14px #0001; padding: 18px 12px 16px; text-align: center; position: relative; }
+    .product .unavailable {position: absolute;top:0;right:0;left:0;background:#ffd6d6;color:#d00;font-size:1rem;padding:4px;border-radius:16px 16px 0 0;}
+    .product img {width:120px;height:120px;object-fit:contain;margin-bottom:8px;}
+    .product .name {font-size:1.2rem;font-weight:600;margin-bottom:6px;}
+    .product .stock {font-size:0.95rem;margin-bottom:10px;}
+    .product button {background: #2db36a;color: #fff;border: none;border-radius: 8px;padding: 10px 0;font-size: 1rem;cursor: pointer;width: 85%;}
+    .cart-bar {position:fixed;bottom:16px;right:16px;z-index:10;}
+    .cart-btn {background: #ffa826;color:#fff;padding:14px 22px;border-radius:32px;box-shadow:0 2px 16px #0001;font-size:1.15rem;font-weight:700;cursor:pointer;}
+    .cart-count {background:#d00;color:#fff;border-radius:50%;padding:4px 9px;font-size:1rem;position:absolute;top:-10px;left:-10px;}
+    .checkout {max-width: 480px;margin:40px auto;background:#fff;padding:30px 24px;border-radius:18px;box-shadow:0 4px 20px #0002;}
+    .checkout h2 {margin: 0 0 12px;}
+    .shipping-options {display:flex;gap:16px; margin: 18px 0;}
+    .ship-opt {flex:1;padding:14px 0;background:#f5f5f5;border-radius:12px;text-align:center;cursor:pointer;border:2px solid transparent;transition:0.2s;}
+    .ship-opt.active {border-color:#2db36a;background:#eafbec;}
+    .prod-list {margin: 16px 0;}
+    .prod-item {display: flex;align-items: center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #f1f1f1;}
+    .prod-status {margin-right:10px;font-size:0.9rem;}
+    .status-green {color:#2db36a;font-weight:bold;}
+    .status-red {color:#d00;font-weight:bold;}
+    .prod-delete {background: #fff0f0; color: #d00; border: none; border-radius: 7px; padding: 6px 12px; cursor: pointer;}
+    .branches {margin: 24px 0 10px;}
+    .branch {padding: 10px 0;font-size:1.1rem;}
+    .branch.green {color:#2db36a;font-weight:bold;}
+    .branch.red {color:#d00;font-weight:bold;}
+    .disabled {background:#eee!important;color:#aaa!important;cursor:not-allowed;}
+    .complete-btn {width:100%;padding:14px 0;font-size:1.15rem;background:#2db36a;color:#fff;border:none;border-radius:12px;cursor:pointer;margin-top:22px;}
+    @media(max-width:700px){.products{padding:16px;gap:12px;}}
   </style>
 </head>
 <body>
-  <header>
-    <h1>متجر الأجهزة المنزلية</h1>
-  </header>
-
-  <div id="locationPopup" class="popup">
-    <h2>اختر المدينة والحي</h2>
-    <label>المدينة:</label>
-    <select id="citySelect">
-      <option value="الرياض">الرياض</option>
+<div id="popup-bg" class="popup-bg">
+  <div class="popup">
+    <h3>اختر المدينة والحي</h3>
+    <select id="city">
+      <option>الرياض</option>
     </select>
-    <label>الحي:</label>
-    <select id="districtSelect">
-      <option value="المعذر">المعذر</option>
-      <option value="الورود">الورود</option>
+    <select id="district">
+      <option>حي المعذر</option>
+      <option>حي الورود</option>
     </select>
     <button onclick="confirmLocation()">تأكيد</button>
-    <button onclick="skipLocation()">تخطي</button>
+    <button style="background:#ddd;color:#222;" onclick="skipLocation()">تخطي</button>
   </div>
-
-  <div id="productsSection" class="products hidden">
-    <h2>منتجاتنا</h2>
-    <div id="productList"></div>
+</div>
+<div class="header">
+  متجر الأجهزة المنزلية
+</div>
+<div id="products" class="products"></div>
+<div id="cartBar" class="cart-bar" style="display:none;">
+  <div class="cart-btn" onclick="openCheckout()">
+    سلة التسوق
+    <span id="cartCount" class="cart-count">0</span>
   </div>
+</div>
+<div id="checkout" style="display:none;"></div>
+<script>
+  // بيانات المخزون حسب كل مخزن
+  const stockData = {
+    "قلاية هوائية":     { "متجر إلكتروني": false, "حي الورود": true,  "حي المعذر": false },
+    "ماكينة قهوة":      { "متجر إلكتروني": true,  "حي الورود": false, "حي المعذر": false },
+    "مايكروييف":        { "متجر إلكتروني": true,  "حي الورود": true,  "حي المعذر": false }
+  };
 
-  <div id="checkoutSection" class="checkout hidden">
-    <h2>إكمال الطلب</h2>
-    <div id="shippingOptions"></div>
-    <button onclick="submitOrder()">أكمل الطلب</button>
-    <p id="orderResult"></p>
-  </div>
+  const productImages = {
+    "قلاية هوائية": "https://cdn.salla.sa/mfLxK/zAa7T3VghHvQb3B31A3Hh7oz3A5Wh1eSk8LOsHJL.jpg",
+    "ماكينة قهوة": "https://cdn.salla.sa/yxZQn/5p6RtAPosv8m0u6dnbghdk0zn2lEE4Yl8NY29wca.jpg",
+    "مايكروييف": "https://cdn.salla.sa/yxZQn/12lPNDiQnF0gwV6A3qUOEb2ptRskkT2ATt8kT22n.jpg"
+  };
 
-  <script>
-    const products = [
-      { name: 'قلاية هوائية', desc: 'صحية وسريعة بدون زيت', image: 'https://i.imgur.com/BX2UQ1R.jpg', available: { "المعذر": false, "الورود": true, "الكتروني": false } },
-      { name: 'ماكينة قهوة', desc: 'تحضير سريع واحترافي للقهوة', image: 'https://i.imgur.com/UsRkZPf.jpg', available: { "المعذر": false, "الورود": false, "الكتروني": true } },
-      { name: 'مايكروييف', desc: 'تسخين سريع وسهل', image: 'https://i.imgur.com/nOSkSvv.jpg', available: { "المعذر": false, "الورود": true, "الكتروني": true } }
-    ];
+  let selectedCity = null;
+  let selectedDistrict = null;
+  let cart = [];
 
-    let selectedDistrict = '';
-    let cart = [];
+  // عند تأكيد الموقع
+  function confirmLocation() {
+    selectedCity = document.getElementById('city').value;
+    selectedDistrict = document.getElementById('district').value;
+    document.getElementById('popup-bg').style.display = 'none';
+    renderProducts();
+  }
+  function skipLocation() {
+    selectedCity = "الرياض";
+    selectedDistrict = null;
+    document.getElementById('popup-bg').style.display = 'none';
+    renderProducts();
+  }
 
-    function confirmLocation() {
-      selectedDistrict = document.getElementById('districtSelect').value;
-      document.getElementById('locationPopup').style.display = 'none';
-      displayProducts();
-    }
-
-    function skipLocation() {
-      selectedDistrict = '';
-      document.getElementById('locationPopup').style.display = 'none';
-      displayProducts();
-    }
-
-    function displayProducts() {
-      const container = document.getElementById('productList');
-      container.innerHTML = '';
-      products.forEach((p, i) => {
-        const available = p.available['الكتروني'] || (selectedDistrict && p.available[selectedDistrict]);
-        const card = document.createElement('div');
-        card.className = 'product-card' + (!available ? ' unavailable' : '');
-        card.innerHTML = `
-          <img src="${p.image}" alt="${p.name}" />
-          <h3>${p.name}</h3>
-          <p>${p.desc}</p>
-          <button ${!available ? 'disabled' : ''} onclick="addToCart(${i})">أضف للسلة</button>
-        `;
-        container.appendChild(card);
-      });
-      document.getElementById('productsSection').classList.remove('hidden');
-    }
-
-    function addToCart(index) {
-      cart.push(products[index]);
-      showCheckout();
-    }
-
-    function showCheckout() {
-      const container = document.getElementById('shippingOptions');
-      container.innerHTML = '';
-
-      ['توصيل منزلي', 'استلام من المعرض'].forEach(method => {
-        let availableCount = 0;
-        const section = document.createElement('div');
-        section.innerHTML = `<h3>${method}</h3>`;
-        cart.forEach(item => {
-          const available = method === 'توصيل منزلي'
-            ? item.available['الكتروني']
-            : item.available[selectedDistrict];
-          if (available) availableCount++;
-          const p = document.createElement('p');
-          p.innerText = item.name + (available ? '' : ' (غير متوفر)');
-          if (!available) p.classList.add('unavailable');
-          section.appendChild(p);
-        });
-        section.innerHTML += `<p>${availableCount} من ${cart.length} متوفر</p>`;
-        container.appendChild(section);
-      });
-
-      document.getElementById('checkoutSection').classList.remove('hidden');
-    }
-
-    function submitOrder() {
-      let allFromElectronic = cart.every(item => item.available['الكتروني']);
-      let singleFromAlWurud = cart.length === 1 && cart[0].available['الورود'];
-
-      const result = document.getElementById('orderResult');
-      if (allFromElectronic || singleFromAlWurud) {
-        result.innerText = '✅ تم إتمام الطلب بنجاح';
-        result.style.color = 'green';
+  // المنتجات المتاحة في كل حالة (حسب الطلب: دائماً أعرض منتجات المتجر الإلكتروني + منتجات الحي)
+  function getVisibleProducts() {
+    let visible = [];
+    for (let name in stockData) {
+      if (selectedDistrict) {
+        // دائماً أعرض منتج متوفر في المتجر الإلكتروني حتى لو غير متوفر في الحي
+        if (stockData[name]["متجر إلكتروني"] || stockData[name][selectedDistrict]) {
+          visible.push(name);
+        }
       } else {
-        result.innerText = '❌ لا يمكن إتمام الطلب حسب شروط التوفر';
-        result.style.color = 'red';
+        // لو تخطى الموقع أعرض جميع منتجات المتجر الإلكتروني
+        if (stockData[name]["متجر إلكتروني"]) visible.push(name);
       }
     }
-  </script>
+    return visible;
+  }
+
+  // هل المنتج متوفر في الحي؟
+  function isAvailable(name) {
+    if (selectedDistrict && stockData[name][selectedDistrict]) return true;
+    if (stockData[name]["متجر إلكتروني"]) return true;
+    return false;
+  }
+
+  // هل متوفر فقط في المتجر الإلكتروني؟
+  function isOnlineOnly(name) {
+    return stockData[name]["متجر إلكتروني"] && !(selectedDistrict && stockData[name][selectedDistrict]);
+  }
+
+  // عرض المنتجات
+  function renderProducts() {
+    const visible = getVisibleProducts();
+    let html = "";
+    visible.forEach(name => {
+      let available = isAvailable(name);
+      let unavailableText = "";
+      if (!available) unavailableText = '<div class="unavailable">غير متوفر</div>';
+      else if (isOnlineOnly(name)) unavailableText = '<div class="unavailable" style="background:#fff5b2;color:#b98000">متوفر فقط في المتجر الإلكتروني</div>';
+      html += `
+        <div class="product">
+          ${unavailableText}
+          <img src="${productImages[name]}" alt="${name}" />
+          <div class="name">${name}</div>
+          <div class="stock">
+            ${stockData[name]["متجر إلكتروني"] ? "متوفر في المتجر الإلكتروني" : ""}
+            ${stockData[name][selectedDistrict || "حي الورود"] ? "<br>متوفر في " + (selectedDistrict || "حي الورود") : ""}
+          </div>
+          <button ${!available ? "class='disabled' disabled" : ""} onclick="addToCart('${name}')">أضف للسلة</button>
+        </div>
+      `;
+    });
+    document.getElementById('products').innerHTML = html;
+    updateCartBar();
+  }
+
+  function addToCart(name) {
+    if (!cart.includes(name)) cart.push(name);
+    updateCartBar();
+  }
+
+  function updateCartBar() {
+    let count = cart.length;
+    document.getElementById('cartCount').innerText = count;
+    document.getElementById('cartBar').style.display = count > 0 ? 'block' : 'none';
+  }
+
+  function openCheckout() {
+    document.getElementById('products').style.display = 'none';
+    document.getElementById('cartBar').style.display = 'none';
+    renderCheckout();
+    document.getElementById('checkout').style.display = 'block';
+  }
+
+  function backToProducts() {
+    document.getElementById('checkout').style.display = 'none';
+    document.getElementById('products').style.display = 'grid';
+    updateCartBar();
+  }
+
+  function deleteFromCart(name) {
+    cart = cart.filter(n => n !== name);
+    if (cart.length === 0) {
+      backToProducts();
+    } else {
+      renderCheckout();
+    }
+  }
+
+  // إكمال الطلب - خيارات الشحن
+  let shippingType = 'delivery'; // أو pickup
+  function selectShipping(type) {
+    shippingType = type;
+    renderCheckout();
+  }
+
+  function canCompleteOrder() {
+    // 1. جميع المنتجات متوفرة في المتجر الإلكتروني
+    if (cart.every(n => stockData[n]["متجر إلكتروني"])) return true;
+    // 2. منتج واحد فقط متوفر في الورود
+    if (cart.length === 1 && stockData[cart[0]]["حي الورود"]) return true;
+    return false;
+  }
+
+  function renderCheckout() {
+    // حساب حالة التوفر في كل طريقة
+    let deliveryAvailable = cart.filter(n => stockData[n]["متجر إلكتروني"]);
+    let deliveryUnavailable = cart.filter(n => !stockData[n]["متجر إلكتروني"]);
+    let pickupAvailable = cart.filter(n => selectedDistrict && stockData[n][selectedDistrict]);
+    let pickupUnavailable = cart.filter(n => !(selectedDistrict && stockData[n][selectedDistrict]));
+
+    let html = `
+      <div class="checkout">
+        <button onclick="backToProducts()" style="float:left;background:#eee;color:#222;padding:6px 16px;border-radius:8px;border:none;">&#8592; رجوع</button>
+        <h2>إكمال الطلب</h2>
+        <div class="shipping-options">
+          <div class="ship-opt ${shippingType=='delivery'?'active':''}" onclick="selectShipping('delivery')">
+            توصيل منزلي <br><span style="font-size:0.98rem">${deliveryAvailable.length} من ${cart.length} متوفر</span>
+          </div>
+          <div class="ship-opt ${shippingType=='pickup'?'active':''}" onclick="selectShipping('pickup')">
+            استلام من المعرض <br><span style="font-size:0.98rem">${pickupAvailable.length} من ${cart.length} متوفر</span>
+          </div>
+        </div>
+        <div class="prod-list">
+    `;
+    cart.forEach(n => {
+      let available, reason = "";
+      if (shippingType == "delivery") {
+        available = stockData[n]["متجر إلكتروني"];
+        if (!available) reason = "غير متوفر للتوصيل";
+      } else {
+        available = selectedDistrict && stockData[n][selectedDistrict];
+        if (!available) reason = "غير متوفر في هذا المعرض";
+      }
+      html += `
+        <div class="prod-item">
+          <span>${n}</span>
+          <span class="prod-status ${available?'status-green':'status-red'}">
+            ${available ? "متوفر" : reason}
+          </span>
+          ${!available ? `<button class="prod-delete" onclick="deleteFromCart('${n}')">حذف</button>` : ""}
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    if (shippingType == 'pickup') {
+      html += `<div class="branches">
+        <div class="branch ${stockData[cart[0]]["حي الورود"] ? 'green':'red'}">معرض حي الورود: ${stockData[cart[0]]["حي الورود"]?'متوفر':'غير متوفر'}</div>
+        <div class="branch ${stockData[cart[0]]["حي المعذر"] ? 'green':'red'}">معرض حي المعذر: ${stockData[cart[0]]["حي المعذر"]?'متوفر':'غير متوفر'}</div>
+      </div>`;
+    }
+
+    html += `<button class="complete-btn" ${!canCompleteOrder() ? "disabled style='background:#eee;color:#aaa;'" : ""}>اتمام الطلب</button>
+      </div>`;
+    document.getElementById('checkout').innerHTML = html;
+  }
+
+  // أول تحميل
+  window.onload = () => { document.getElementById('popup-bg').style.display = 'flex'; };
+</script>
 </body>
 </html>

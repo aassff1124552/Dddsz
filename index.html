@@ -25,6 +25,7 @@
     .shipping-options {display:flex;gap:16px; margin: 18px 0;}
     .ship-opt {flex:1;padding:14px 0;background:#f5f5f5;border-radius:12px;text-align:center;cursor:pointer;border:2px solid transparent;transition:0.2s;}
     .ship-opt.active {border-color:#2db36a;background:#eafbec;}
+    .ship-opt.free {border-color:#ffa826;background:#ffeab2;}
     .prod-list {margin: 16px 0;}
     .prod-item {display: flex;align-items: center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #f1f1f1;}
     .prod-status {margin-right:10px;font-size:0.9rem;}
@@ -37,6 +38,7 @@
     .branch.red {color:#d00;font-weight:bold;}
     .disabled {background:#eee!important;color:#aaa!important;cursor:not-allowed;}
     .complete-btn {width:100%;padding:14px 0;font-size:1.15rem;background:#2db36a;color:#fff;border:none;border-radius:12px;cursor:pointer;margin-top:22px;}
+    .free-badge {background:#2db36a;color:#fff;padding:3px 8px;border-radius:6px;margin-right:6px;font-size:0.95rem;}
     @media(max-width:700px){.products{padding:16px;gap:12px;}}
   </style>
 </head>
@@ -48,7 +50,6 @@
       <option>الرياض</option>
     </select>
     <select id="district">
-      <option>حي المعذر</option>
       <option>حي الورود</option>
     </select>
     <button onclick="confirmLocation()">تأكيد</button>
@@ -67,67 +68,66 @@
 </div>
 <div id="checkout" style="display:none;"></div>
 <script>
-  // بيانات المخزون حسب كل مخزن
+  // بيانات المخزون: حي الورود و المتجر الإلكتروني فقط
   const stockData = {
-    "قلاية هوائية":     { "متجر إلكتروني": false, "حي الورود": true,  "حي المعذر": false },
-    "ماكينة قهوة":      { "متجر إلكتروني": true,  "حي الورود": false, "حي المعذر": false },
-    "مايكروييف":        { "متجر إلكتروني": true,  "حي الورود": true,  "حي المعذر": false }
+    "قلاية هوائية":     { "متجر إلكتروني": false, "حي الورود": true },
+    "ماكينة قهوة":      { "متجر إلكتروني": true,  "حي الورود": false },
+    "مايكروييف":        { "متجر إلكتروني": true,  "حي الورود": true }
   };
 
-  const productImages = {
-    "قلاية هوائية": "https://cdn.salla.sa/mfLxK/zAa7T3VghHvQb3B31A3Hh7oz3A5Wh1eSk8LOsHJL.jpg",
-    "ماكينة قهوة": "https://cdn.salla.sa/yxZQn/5p6RtAPosv8m0u6dnbghdk0zn2lEE4Yl8NY29wca.jpg",
-    "مايكروييف": "https://cdn.salla.sa/yxZQn/12lPNDiQnF0gwV6A3qUOEb2ptRskkT2ATt8kT22n.jpg"
-  };
+  // صورة واحدة لكل المنتجات
+  const productImage = "https://imgs.qasralawani.net/media/catalog/product/d/s/dsc_0507.jpg";
 
   let selectedCity = null;
   let selectedDistrict = null;
   let cart = [];
+  let skipFlag = false; // هل المستخدم اختار تخطي؟
 
-  // عند تأكيد الموقع
   function confirmLocation() {
     selectedCity = document.getElementById('city').value;
     selectedDistrict = document.getElementById('district').value;
+    skipFlag = false;
     document.getElementById('popup-bg').style.display = 'none';
     renderProducts();
   }
   function skipLocation() {
     selectedCity = "الرياض";
     selectedDistrict = null;
+    skipFlag = true;
     document.getElementById('popup-bg').style.display = 'none';
     renderProducts();
   }
 
-  // المنتجات المتاحة في كل حالة (حسب الطلب: دائماً أعرض منتجات المتجر الإلكتروني + منتجات الحي)
   function getVisibleProducts() {
     let visible = [];
     for (let name in stockData) {
-      if (selectedDistrict) {
-        // دائماً أعرض منتج متوفر في المتجر الإلكتروني حتى لو غير متوفر في الحي
-        if (stockData[name]["متجر إلكتروني"] || stockData[name][selectedDistrict]) {
+      // عند تخطي الموقع، يعرض منتجات المتجر الإلكتروني فقط
+      if (skipFlag) {
+        visible.push(name);
+      } else {
+        // أعرض منتجات المتجر الإلكتروني + منتجات حي الورود
+        if (stockData[name]["متجر إلكتروني"] || (selectedDistrict && stockData[name][selectedDistrict])) {
           visible.push(name);
         }
-      } else {
-        // لو تخطى الموقع أعرض جميع منتجات المتجر الإلكتروني
-        if (stockData[name]["متجر إلكتروني"]) visible.push(name);
       }
     }
     return visible;
   }
 
-  // هل المنتج متوفر في الحي؟
   function isAvailable(name) {
-    if (selectedDistrict && stockData[name][selectedDistrict]) return true;
+    // في حالة التخطي: المنتج متوفر فقط إذا كان متوفر في المتجر الإلكتروني
+    if (skipFlag) return !!stockData[name]["متجر إلكتروني"];
+    // عكس ذلك: متوفر إذا متوفر في المتجر الإلكتروني أو في حي الورود
     if (stockData[name]["متجر إلكتروني"]) return true;
+    if (selectedDistrict && stockData[name][selectedDistrict]) return true;
     return false;
   }
 
-  // هل متوفر فقط في المتجر الإلكتروني؟
   function isOnlineOnly(name) {
+    // فقط متوفر في المتجر الإلكتروني
     return stockData[name]["متجر إلكتروني"] && !(selectedDistrict && stockData[name][selectedDistrict]);
   }
 
-  // عرض المنتجات
   function renderProducts() {
     const visible = getVisibleProducts();
     let html = "";
@@ -139,11 +139,11 @@
       html += `
         <div class="product">
           ${unavailableText}
-          <img src="${productImages[name]}" alt="${name}" />
+          <img src="${productImage}" alt="${name}" />
           <div class="name">${name}</div>
           <div class="stock">
             ${stockData[name]["متجر إلكتروني"] ? "متوفر في المتجر الإلكتروني" : ""}
-            ${stockData[name][selectedDistrict || "حي الورود"] ? "<br>متوفر في " + (selectedDistrict || "حي الورود") : ""}
+            ${(selectedDistrict && stockData[name]["حي الورود"]) ? "<br>متوفر في حي الورود" : ""}
           </div>
           <button ${!available ? "class='disabled' disabled" : ""} onclick="addToCart('${name}')">أضف للسلة</button>
         </div>
@@ -186,8 +186,8 @@
     }
   }
 
-  // إكمال الطلب - خيارات الشحن
-  let shippingType = 'delivery'; // أو pickup
+  // نوع الشحن الحالي
+  let shippingType = 'delivery';
   function selectShipping(type) {
     shippingType = type;
     renderCheckout();
@@ -195,18 +195,27 @@
 
   function canCompleteOrder() {
     // 1. جميع المنتجات متوفرة في المتجر الإلكتروني
-    if (cart.every(n => stockData[n]["متجر إلكتروني"])) return true;
-    // 2. منتج واحد فقط متوفر في الورود
+    if (cart.length && cart.every(n => stockData[n]["متجر إلكتروني"])) return true;
+    // 2. منتج واحد فقط متوفر في حي الورود
     if (cart.length === 1 && stockData[cart[0]]["حي الورود"]) return true;
     return false;
   }
 
+  function isAllInWorood() {
+    // هل جميع المنتجات في السلة متوفرة في حي الورود؟
+    if (!cart.length) return false;
+    return cart.every(n => stockData[n]["حي الورود"]);
+  }
+
   function renderCheckout() {
-    // حساب حالة التوفر في كل طريقة
+    // حساب حالة التوفر
     let deliveryAvailable = cart.filter(n => stockData[n]["متجر إلكتروني"]);
     let deliveryUnavailable = cart.filter(n => !stockData[n]["متجر إلكتروني"]);
-    let pickupAvailable = cart.filter(n => selectedDistrict && stockData[n][selectedDistrict]);
-    let pickupUnavailable = cart.filter(n => !(selectedDistrict && stockData[n][selectedDistrict]));
+    let woroodAvailable = cart.filter(n => stockData[n]["حي الورود"]);
+    let woroodUnavailable = cart.filter(n => !stockData[n]["حي الورود"]);
+
+    // الشحن السريع: يظهر فقط إذا تم تحديد حي الورود وكل المنتجات متوفرة فيه
+    let showFastShipping = selectedDistrict === "حي الورود" && isAllInWorood();
 
     let html = `
       <div class="checkout">
@@ -217,8 +226,13 @@
             توصيل منزلي <br><span style="font-size:0.98rem">${deliveryAvailable.length} من ${cart.length} متوفر</span>
           </div>
           <div class="ship-opt ${shippingType=='pickup'?'active':''}" onclick="selectShipping('pickup')">
-            استلام من المعرض <br><span style="font-size:0.98rem">${pickupAvailable.length} من ${cart.length} متوفر</span>
+            استلام من حي الورود <br><span style="font-size:0.98rem">${woroodAvailable.length} من ${cart.length} متوفر</span>
           </div>
+          ${showFastShipping?`
+          <div class="ship-opt free ${shippingType=='fast'?'active':''}" onclick="selectShipping('fast')">
+            <span class="free-badge">شحن سريع - مجاني</span>
+            <br>كل المنتجات متوفرة في حي الورود
+          </div>`:""}
         </div>
         <div class="prod-list">
     `;
@@ -227,9 +241,9 @@
       if (shippingType == "delivery") {
         available = stockData[n]["متجر إلكتروني"];
         if (!available) reason = "غير متوفر للتوصيل";
-      } else {
-        available = selectedDistrict && stockData[n][selectedDistrict];
-        if (!available) reason = "غير متوفر في هذا المعرض";
+      } else if (shippingType == "pickup" || shippingType == "fast") {
+        available = stockData[n]["حي الورود"];
+        if (!available) reason = "غير متوفر في حي الورود";
       }
       html += `
         <div class="prod-item">
@@ -243,19 +257,11 @@
     });
     html += `</div>`;
 
-    if (shippingType == 'pickup') {
-      html += `<div class="branches">
-        <div class="branch ${stockData[cart[0]]["حي الورود"] ? 'green':'red'}">معرض حي الورود: ${stockData[cart[0]]["حي الورود"]?'متوفر':'غير متوفر'}</div>
-        <div class="branch ${stockData[cart[0]]["حي المعذر"] ? 'green':'red'}">معرض حي المعذر: ${stockData[cart[0]]["حي المعذر"]?'متوفر':'غير متوفر'}</div>
-      </div>`;
-    }
-
     html += `<button class="complete-btn" ${!canCompleteOrder() ? "disabled style='background:#eee;color:#aaa;'" : ""}>اتمام الطلب</button>
       </div>`;
     document.getElementById('checkout').innerHTML = html;
   }
 
-  // أول تحميل
   window.onload = () => { document.getElementById('popup-bg').style.display = 'flex'; };
 </script>
 </body>

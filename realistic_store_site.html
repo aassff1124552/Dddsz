@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المتجر الإلكتروني</title>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #fff;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin: 0;
+      color: #333;
+    }
+    .popup, .products, .checkout {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .product-card {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      background: #fafafa;
+    }
+    .product-card img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    .product-card h3 {
+      margin: 10px 0 5px;
+    }
+    .product-card p {
+      margin: 5px 0;
+    }
+    .product-card button {
+      padding: 10px;
+      background: orange;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .product-card button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .unavailable {
+      border: 2px solid red !important;
+    }
+    .checkout p {
+      margin: 10px 0;
+    }
+    .checkout .unavailable {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>متجر الأجهزة المنزلية</h1>
+  </header>
+
+  <div id="locationPopup" class="popup">
+    <h2>اختر المدينة والحي</h2>
+    <label>المدينة:</label>
+    <select id="citySelect">
+      <option value="الرياض">الرياض</option>
+    </select>
+    <label>الحي:</label>
+    <select id="districtSelect">
+      <option value="المعذر">المعذر</option>
+      <option value="الورود">الورود</option>
+    </select>
+    <button onclick="confirmLocation()">تأكيد</button>
+    <button onclick="skipLocation()">تخطي</button>
+  </div>
+
+  <div id="productsSection" class="products hidden">
+    <h2>منتجاتنا</h2>
+    <div id="productList"></div>
+  </div>
+
+  <div id="checkoutSection" class="checkout hidden">
+    <h2>إكمال الطلب</h2>
+    <div id="shippingOptions"></div>
+    <button onclick="submitOrder()">أكمل الطلب</button>
+    <p id="orderResult"></p>
+  </div>
+
+  <script>
+    const products = [
+      { name: 'قلاية هوائية', desc: 'صحية وسريعة بدون زيت', image: 'https://i.imgur.com/BX2UQ1R.jpg', available: { "المعذر": false, "الورود": true, "الكتروني": false } },
+      { name: 'ماكينة قهوة', desc: 'تحضير سريع واحترافي للقهوة', image: 'https://i.imgur.com/UsRkZPf.jpg', available: { "المعذر": false, "الورود": false, "الكتروني": true } },
+      { name: 'مايكروييف', desc: 'تسخين سريع وسهل', image: 'https://i.imgur.com/nOSkSvv.jpg', available: { "المعذر": false, "الورود": true, "الكتروني": true } }
+    ];
+
+    let selectedDistrict = '';
+    let cart = [];
+
+    function confirmLocation() {
+      selectedDistrict = document.getElementById('districtSelect').value;
+      document.getElementById('locationPopup').style.display = 'none';
+      displayProducts();
+    }
+
+    function skipLocation() {
+      selectedDistrict = '';
+      document.getElementById('locationPopup').style.display = 'none';
+      displayProducts();
+    }
+
+    function displayProducts() {
+      const container = document.getElementById('productList');
+      container.innerHTML = '';
+      products.forEach((p, i) => {
+        const available = p.available['الكتروني'] || (selectedDistrict && p.available[selectedDistrict]);
+        const card = document.createElement('div');
+        card.className = 'product-card' + (!available ? ' unavailable' : '');
+        card.innerHTML = `
+          <img src="${p.image}" alt="${p.name}" />
+          <h3>${p.name}</h3>
+          <p>${p.desc}</p>
+          <button ${!available ? 'disabled' : ''} onclick="addToCart(${i})">أضف للسلة</button>
+        `;
+        container.appendChild(card);
+      });
+      document.getElementById('productsSection').classList.remove('hidden');
+    }
+
+    function addToCart(index) {
+      cart.push(products[index]);
+      showCheckout();
+    }
+
+    function showCheckout() {
+      const container = document.getElementById('shippingOptions');
+      container.innerHTML = '';
+
+      ['توصيل منزلي', 'استلام من المعرض'].forEach(method => {
+        let availableCount = 0;
+        const section = document.createElement('div');
+        section.innerHTML = `<h3>${method}</h3>`;
+        cart.forEach(item => {
+          const available = method === 'توصيل منزلي'
+            ? item.available['الكتروني']
+            : item.available[selectedDistrict];
+          if (available) availableCount++;
+          const p = document.createElement('p');
+          p.innerText = item.name + (available ? '' : ' (غير متوفر)');
+          if (!available) p.classList.add('unavailable');
+          section.appendChild(p);
+        });
+        section.innerHTML += `<p>${availableCount} من ${cart.length} متوفر</p>`;
+        container.appendChild(section);
+      });
+
+      document.getElementById('checkoutSection').classList.remove('hidden');
+    }
+
+    function submitOrder() {
+      let allFromElectronic = cart.every(item => item.available['الكتروني']);
+      let singleFromAlWurud = cart.length === 1 && cart[0].available['الورود'];
+
+      const result = document.getElementById('orderResult');
+      if (allFromElectronic || singleFromAlWurud) {
+        result.innerText = '✅ تم إتمام الطلب بنجاح';
+        result.style.color = 'green';
+      } else {
+        result.innerText = '❌ لا يمكن إتمام الطلب حسب شروط التوفر';
+        result.style.color = 'red';
+      }
+    }
+  </script>
+</body>
+</html>
